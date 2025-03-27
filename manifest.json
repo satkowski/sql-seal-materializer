@@ -1,0 +1,10 @@
+{
+	"id": "sqlseal-materalizer",
+	"name": "SQLSeal Materlizer",
+	"version": "0.0.1",
+	"minAppVersion": "0.15.0",
+	"description": "Extension for SQLSeal Obsidian Plugin. Print your data in your markdown files - make them eternal! ",
+	"author": "Marc Satkowski",
+	"authorUrl": "https://marc-satkowski.de",
+	"isDesktopOnly": false
+}
