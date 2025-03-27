@@ -6,6 +6,8 @@ import { mapDataFromHeaders } from "src/utils/mdTableParser";
 
 
 export class MDPrintRenderer implements RendererConfig {    
+    ignoreNextUpdate: boolean = false
+
     constructor(private readonly app: App) { 
     }
     
@@ -30,18 +32,26 @@ export class MDPrintRenderer implements RendererConfig {
     render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement) {
         return {
             render: ({ columns, data }: any) => {
+                // Check if the current update was most likely triggered by the last table update of this plugin
+                if (this.ignoreNextUpdate) {
+                    console.log("MD-PRINT Renderer: Ignoring update")
+                    this.ignoreNextUpdate = false
+                    return
+                }
+
                 // Check if a id was provided
                 if (Object.keys(config).length === 0)
                     throw new Error('The MD-PRINT renderer needs an ID to work.')
-
-                console.log("MD-PRINT Rendered")
         
                 // Render the table and save it to the file.
                 this.printTable(config, { columns, data })
+                console.log("MD-PRINT Renderer: Table printed")
 
                 // Hide the original code block.
                 el.empty()
                 el.createDiv({ text: "This codeblock is hidden." })
+
+                this.ignoreNextUpdate = true
             },
             error: (error: string) => {
                 return createDiv({ text: error, cls: 'sqlseal-error' })
@@ -63,7 +73,6 @@ export class MDPrintRenderer implements RendererConfig {
             }
         })
 
-        // const regex = new RegExp(`\`\`\`sqlseal\\n[\\s\\S]*?MD-PRINT ${config}[\\s\\S]*?\`\`\``, 'g');
         const regex = new RegExp(`\`\`\`sqlseal\\n[\\s\\S]*?${this.rendererKey} ${config}[\\s\\S]*?\`\`\``, 'gi');
         let match;
         while ((match = regex.exec(editor.getValue())) !== null) {
