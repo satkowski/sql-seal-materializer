@@ -1,13 +1,12 @@
 import { RendererConfig } from "@hypersphere/sqlseal";
 import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
+import { console } from "inspector";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
 import { mapDataFromHeaders } from "src/utils/mdTableParser";
 
 
 export class MDPrintRenderer implements RendererConfig {    
-    ignoreNextUpdate: boolean = false
-
     constructor(private readonly app: App) { 
     }
     
@@ -32,26 +31,16 @@ export class MDPrintRenderer implements RendererConfig {
     render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement) {
         return {
             render: ({ columns, data }: any) => {
-                // Check if the current update was most likely triggered by the last table update of this plugin
-                if (this.ignoreNextUpdate) {
-                    console.log("MD-PRINT Renderer: Ignoring update")
-                    this.ignoreNextUpdate = false
-                    return
-                }
-
                 // Check if a id was provided
                 if (Object.keys(config).length === 0)
                     throw new Error('The MD-PRINT renderer needs an ID to work.')
         
                 // Render the table and save it to the file.
                 this.printTable(config, { columns, data })
-                console.log("MD-PRINT Renderer: Table printed")
 
                 // Hide the original code block.
                 el.empty()
                 el.createDiv({ text: "This codeblock is hidden." })
-
-                this.ignoreNextUpdate = true
             },
             error: (error: string) => {
                 return createDiv({ text: error, cls: 'sqlseal-error' })
@@ -77,56 +66,81 @@ export class MDPrintRenderer implements RendererConfig {
         let match;
         while ((match = regex.exec(editor.getValue())) !== null) {
             // Get the line number of the codeblocks end
-            const lineNumber = editor.getValue().substring(0, match.index + match[0].length).split('\n').length - 1;
+            const curLineNumber = editor.getValue().substring(0, match.index + match[0].length).split('\n').length - 1;
 
             // Generate the region strings            
             const { regionStart, regionEnd } = this.generateRegionStrings(config);
 
-            // Remove the old content, if present
-            this.checkForExistingMaterializedRegion(editor, lineNumber, regionStart, regionEnd);
+            // Get the old materialized region location
+            const { startLine, endLine } = this.getMaterializedTableLocation(editor, curLineNumber, regionStart, regionEnd);
+
+            // Handle the old materialized table
+            if (startLine !== -1 && endLine !== -1) {
+                // If the new table is the same as the old, don't do anything
+                if (this.checkTableUpdate(editor, startLine, endLine, tab)) {
+                    console.log('MD-PRINT Renderer: Table is the same, not updating.')
+                    return
+                }
+
+                // Remove the old content, if present
+                this.removeOldMaterializedRegion(editor, startLine, endLine);
+            }
 
             // Save the rendered table to the file
             const newContent = `${regionStart}\n\n${tab}\n${regionEnd}`;
-            const currentLineContent = editor.getLine(lineNumber);
-            editor.setLine(lineNumber, `${currentLineContent}\n\n${newContent}`);
+            const currentLineContent = editor.getLine(curLineNumber);
+            editor.setLine(curLineNumber, `${currentLineContent}\n\n${newContent}`);
+
+            console.log("MD-PRINT Renderer: Table printed/updated.")
         }
     }
     
-    private async checkForExistingMaterializedRegion(editor: Editor, currentLineNumber: number, regionStart: string, regionEnd: string) { 
+    private async removeOldMaterializedRegion(editor: Editor, startLine: number, endLine: number) { 
+        // Remove the materialized region if it exists
+        if (!(startLine !== -1 && endLine !== -1)) 
+            return
+
+        // Remove an empty line after the materialized region, as it gets re-added later on
+        if (editor.getLine(endLine + 1).trim() === '')
+            endLine += 1
+
+        editor.replaceRange('', { line: startLine, ch: 0 }, { line: endLine + 1, ch: 0 })
+    }
+
+    private checkTableUpdate(editor: Editor, startLine: number, endLine: number, newTab: string): boolean { 
+        const oldTab = editor.getRange({ line: startLine + 1, ch: 0 }, { line: endLine, ch: 0 })
+
+        return oldTab.trim() == newTab.trim()
+    }
+
+    private generateRegionStrings(config: string): { regionStart: string, regionEnd: string } {
+        return {
+            regionStart: `%% START ${this.rendererKey}: ${config} %%`,
+            regionEnd: `%% END ${this.rendererKey}: ${config} %%`
+        }
+    }
+
+    private getMaterializedTableLocation(editor: Editor, currentLineNumber: number, regionStart: string, regionEnd: string): { startLine: number, endLine: number } {
         const lines = editor.getValue().split('\n')
         let startLine = -1
-        let endLine = -2
-
+        let endLine = -1
+        
         // Find the start and end lines of the materialized region
         for (let i = currentLineNumber + 1; i < lines.length; i++) {
-            if (lines[i].includes(regionStart)) {
+            if (lines[i].startsWith(regionStart)) {
                 startLine = i
-            } else if (startLine !== -1 && lines[i].includes(regionEnd)) {
+                continue
+            }
+
+            if (lines[i].startsWith(regionEnd) && startLine !== -1) {
                 endLine = i
-                // Count until a non-empty line is encountered
-                for (let j = i + 1; j < lines.length; j++) {
-                    if (lines[j].trim() !== '') {
-                        endLine = j - 1
-                        break
-                    }
-                    if (j === lines.length - 1) {
-                        endLine = j
-                    }
-                }
                 break
             }
         }
 
-        // Remove the materialized region if it exists
-        if (startLine !== -1 && endLine !== -1) {
-            editor.replaceRange('', { line: startLine, ch: 0 }, { line: endLine + 1, ch: 0 })
-        }
-    }
-
-    private generateRegionStrings(config: string) {
         return {
-            regionStart: `%% START ${this.rendererKey}: ${config} %%`,
-            regionEnd: `%% END ${this.rendererKey}: ${config} %%`
+            startLine: startLine,
+            endLine: endLine
         }
     }
 }
