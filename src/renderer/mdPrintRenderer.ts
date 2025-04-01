@@ -3,6 +3,7 @@ import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
 import { console } from "inspector";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
+import { SQLSealMaterializerSettings } from "src/settings/SQLSealMaterializerSettingsTab";
 import { mapDataFromHeaders, parseSQLSealCustom } from "src/utils/materializerUtils";
 
 

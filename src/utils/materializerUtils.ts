@@ -1,5 +1,6 @@
 import { console } from "inspector"
 import { parse } from "json5"
+import SQLSealMaterializer from "src/main"
 
 
 export const mapDataFromHeaders = (columns: string[], data: Record<string, any>[]) => {
@@ -7,7 +8,6 @@ export const mapDataFromHeaders = (columns: string[], data: Record<string, any>[
 }
 
 export const parseSQLSealCustom = (input: string): string => {
-    console.log(`Input: ${input}`)
     input = input.trim()
     if (!input.startsWith('SQLSEALCUSTOM'))
         return input
@@ -27,16 +27,20 @@ const SQLSeal_link = (parsedData: any): string => {
 }
 
 const SQLSeal_image = (parsedData: any): string => {
-    return `![[${parsedData.values[0]}\\|200]]`
+    return `![[${parsedData.values[0]}\\|${SQLSealMaterializer.settings.imgSize}]]`
 }
 
 const SQLSeal_checkbox = (parsedData: any): string => {
-    if (parsedData.values[0])
-        return "<input type='checkbox' checked>"
-    else
-        return "<input type='checkbox'>"
-    // return `<input type='checkbox'>${parsedData.values[0] ? '\n::after\n</input>' : ''}`
-    // return `${parsedData.values[0] ? '☐' : '☑'}`
+    if (SQLSealMaterializer.settings.checkboxType === 'html') {
+        if (parsedData.values[0])
+            return "<input type='checkbox' checked>"
+        else
+            return "<input type='checkbox'>"
+    } else if (SQLSealMaterializer.settings.checkboxType === 'unicode') {
+        return `${parsedData.values[0] ? '☑' : '☐'}`
+    }
+
+    return ""
 }
 
 const SQLSealCustomParsers = {
