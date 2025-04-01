@@ -38,6 +38,7 @@
         "markdown-table-ts": "^1.0.3",
         "ohm-js": "^17.1.0",
 		"lodash": "^4.17.21",
-		"sql-parser-cst": "^0.32.0"
+		"sql-parser-cst": "^0.32.0",
+    	"json5": "^2.2.3"
 	}
 }

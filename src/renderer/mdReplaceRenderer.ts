@@ -2,7 +2,7 @@ import { RendererConfig } from "@hypersphere/sqlseal";
 import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
-import { mapDataFromHeaders } from "src/utils/mdTableParser";
+import { mapDataFromHeaders } from "src/utils/materializerUtils";
 
 
 export class MDReplaceRenderer implements RendererConfig {    

@@ -3,7 +3,7 @@ import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
 import { console } from "inspector";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
-import { mapDataFromHeaders } from "src/utils/mdTableParser";
+import { mapDataFromHeaders, parseSQLSealCustom } from "src/utils/materializerUtils";
 
 
 export class MDPrintRenderer implements RendererConfig {    
@@ -55,12 +55,18 @@ export class MDPrintRenderer implements RendererConfig {
             throw new Error('No active editor found.')
 
         // Construct the md table.
-        const tab = getMarkdownTable({
+        let tab = getMarkdownTable({
             table: {
                 head: columns,
                 body: mapDataFromHeaders(columns, data)
             }
         })
+
+        // Replace content between pipes (|) in the table
+        // tab = tab.replace(/\|([^|]*)\|/g, (match, content) => {
+        tab = tab.replace(/\|[\s]*(SQLSEALCUSTOM\([^|]*\))[\s]*\|/g, (match, content) => {
+            return `| ${parseSQLSealCustom(content)} |`
+        });
 
         const regex = new RegExp(`\`\`\`sqlseal\\n[\\s\\S]*?${this.rendererKey} ${config}[\\s\\S]*?\`\`\``, 'gi');
         let match;
