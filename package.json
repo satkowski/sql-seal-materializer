@@ -33,7 +33,7 @@
 		"typescript": "^5.8.2"
 	},
 	"dependencies": {
-		"@hypersphere/sqlseal": "^0.28.0",
+		"@hypersphere/sqlseal": "^0.32.0",
 		"@vanakat/plugin-api": "^0.2.1",
         "markdown-table-ts": "^1.0.3",
         "ohm-js": "^17.1.0",

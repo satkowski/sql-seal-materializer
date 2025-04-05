@@ -1,10 +1,11 @@
-import { RendererConfig } from "@hypersphere/sqlseal";
+import { ModernCellParser } from "@hypersphere/sqlseal/dist/src/cellParser/ModernCellParser";
 import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
+import { RendererConfig, RendererContext } from "@hypersphere/sqlseal/dist/src/renderer/rendererRegistry";
+// import { ParseResults } from "@hypersphere/sqlseal/dist/src/cellParser/parseResults";
 import { console } from "inspector";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
-import { SQLSealMaterializerSettings } from "src/settings/SQLSealMaterializerSettingsTab";
-import { mapDataFromHeaders, parseSQLSealCustom } from "src/utils/materializerUtils";
+import { mapDataFromHeaders, renderAsString } from "src/utils/materializerUtils";
 
 
 export class MDPrintRenderer implements RendererConfig {    
@@ -29,7 +30,7 @@ export class MDPrintRenderer implements RendererConfig {
         return config
     }
 
-    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement) {
+    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement, { cellParser } : RendererContext) {
         return {
             render: ({ columns, data }: any) => {
                 // Check if a id was provided
@@ -37,7 +38,7 @@ export class MDPrintRenderer implements RendererConfig {
                     throw new Error('The MD-PRINT renderer needs an ID to work.')
         
                 // Render the table and save it to the file.
-                this.printTable(config, { columns, data })
+                this.printTable(config, { columns, data }, cellParser)
 
                 // Hide the original code block.
                 el.empty()
@@ -49,25 +50,19 @@ export class MDPrintRenderer implements RendererConfig {
         }
     }
 
-    private printTable(config, { columns, data }: any) {
+    private printTable(config, { columns, data }: any, cellParser: ModernCellParser) {
         // Get the editor instance
         const editor = this.app.workspace.activeEditor?.editor
         if (!editor)
             throw new Error('No active editor found.')
 
         // Construct the md table.
-        let tab = getMarkdownTable({
+        const tab = getMarkdownTable({
             table: {
                 head: columns,
-                body: mapDataFromHeaders(columns, data)
+                body: mapDataFromHeaders(columns, renderAsString(data, columns, cellParser))
             }
         })
-
-        // Replace content between pipes (|) in the table
-        // tab = tab.replace(/\|([^|]*)\|/g, (match, content) => {
-        tab = tab.replace(/\|[\s]*(SQLSEALCUSTOM\([^|]*\))[\s]*\|/g, (match, content) => {
-            return `| ${parseSQLSealCustom(content)} |`
-        });
 
         const regex = new RegExp(`\`\`\`sqlseal\\n[\\s\\S]*?${this.rendererKey} ${config}[\\s\\S]*?\`\`\``, 'gi');
         let match;
@@ -149,5 +144,5 @@ export class MDPrintRenderer implements RendererConfig {
             startLine: startLine,
             endLine: endLine
         }
-    }
+    } 
 }

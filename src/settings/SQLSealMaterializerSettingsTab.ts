@@ -2,12 +2,12 @@ import { App, PluginSettingTab, Setting, Plugin } from 'obsidian';
 
 export interface SQLSealMaterializerSettings {
     imgSize: number;
-    checkboxType: 'unicode' | 'html';
+    checkboxType: 'unicode' | 'html' | 'markdown';
 }
 
 export const DEFAULT_SETTINGS: SQLSealMaterializerSettings = {
     imgSize: 200,
-    checkboxType: 'html'
+    checkboxType: 'markdown'
 }
 
 export class SQLSealMaterializerSettingsTab extends PluginSettingTab {
@@ -49,9 +49,10 @@ export class SQLSealMaterializerSettingsTab extends PluginSettingTab {
             .addDropdown(dropdown => dropdown
                 .addOption('unicode', 'Unicode')
                 .addOption('html', 'HTML Input')
+                .addOption('markdown', 'Markdown')
                 .setValue(this.settings.checkboxType)
                 .onChange(async (value) => {
-                    this.settings.checkboxType = value as 'unicode' | 'html';
+                    this.settings.checkboxType = value as 'unicode' | 'html' | 'markdown';
                     if (!value) {
                         this.settings.checkboxType = DEFAULT_SETTINGS.checkboxType
                     }

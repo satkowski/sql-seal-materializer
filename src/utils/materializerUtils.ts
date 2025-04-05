@@ -1,5 +1,3 @@
-import { console } from "inspector"
-import { parse } from "json5"
 import SQLSealMaterializer from "src/main"
 
 
@@ -7,44 +5,40 @@ export const mapDataFromHeaders = (columns: string[], data: Record<string, any>[
     return data.map(d => columns.map(c => String(d[c])))
 }
 
-export const parseSQLSealCustom = (input: string): string => {
-    input = input.trim()
-    if (!input.startsWith('SQLSEALCUSTOM'))
-        return input
-
-    const parsedData = parse(input.slice('SQLSEALCUSTOM('.length, -1))
-    if (!(parsedData.type in SQLSealCustomParsers))
-        return input
-
-    return SQLSealCustomParsers[parsedData.type](parsedData)
+export const renderAsString = (data: Record<string, any>[], columns: string[], cellParser) => {
+    return data.map(d => {
+        const res: Record<string, string> = {}
+        for (const col of columns) {
+            const cell = cellParser.renderAsString(d[col])
+            res[col] = formatCell(cell)
+        }
+        return res
+    })
 }
 
-const SQLSeal_link = (parsedData: any): string => {
-    if (parsedData.values[1] === null)
-        return `[[${parsedData.values[0]}]]`
-    else
-        return `[[${parsedData.values[0]}\\|${parsedData.values[1]}]]`
-}
+export const formatCell = (value: string): string => {
+    // Escape the pipe character
+    if (value.startsWith('[[')) {
+        return value.replace(/\|/g, '\\|')
+    } 
 
-const SQLSeal_image = (parsedData: any): string => {
-    return `![[${parsedData.values[0]}\\|${SQLSealMaterializer.settings.imgSize}]]`
-}
-
-const SQLSeal_checkbox = (parsedData: any): string => {
-    if (SQLSealMaterializer.settings.checkboxType === 'html') {
-        if (parsedData.values[0])
-            return "<input type='checkbox' checked>"
-        else
-            return "<input type='checkbox'>"
-    } else if (SQLSealMaterializer.settings.checkboxType === 'unicode') {
-        return `${parsedData.values[0] ? '☑' : '☐'}`
+    // Change the checkboxes
+    if (value === '[ ]' || value === ('[x]')) {
+        const checked = value === ('[x]')
+        
+        if (SQLSealMaterializer.settings.checkboxType === 'html') {
+            return `<input type='checkbox' ${checked ? 'checked' : ''}>`
+        } else if (SQLSealMaterializer.settings.checkboxType === 'unicode') {
+            return `${checked ? '☑' : '☐'}`
+        } else { // markdown
+            return value
+        }
     }
 
-    return ""
-}
+    // Change the images
+    if (value.startsWith('![[')) {
+        return value.replace(/]]/g, `\\|${SQLSealMaterializer.settings.imgSize}]]`)
+    }
 
-const SQLSealCustomParsers = {
-    "a": SQLSeal_link,
-    "img": SQLSeal_image,
-    "checkbox": SQLSeal_checkbox
+    return value
 }
