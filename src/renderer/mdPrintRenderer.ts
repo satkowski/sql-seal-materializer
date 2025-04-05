@@ -1,7 +1,6 @@
 import { ModernCellParser } from "@hypersphere/sqlseal/dist/src/cellParser/ModernCellParser";
 import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
 import { RendererConfig, RendererContext } from "@hypersphere/sqlseal/dist/src/renderer/rendererRegistry";
-// import { ParseResults } from "@hypersphere/sqlseal/dist/src/cellParser/parseResults";
 import { console } from "inspector";
 import { getMarkdownTable } from "markdown-table-ts";
 import { App, Editor } from "obsidian";
@@ -30,7 +29,7 @@ export class MDPrintRenderer implements RendererConfig {
         return config
     }
 
-    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement, { cellParser } : RendererContext) {
+    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement, renderCtx : RendererContext) {
         return {
             render: ({ columns, data }: any) => {
                 // Check if a id was provided
@@ -38,7 +37,7 @@ export class MDPrintRenderer implements RendererConfig {
                     throw new Error('The MD-PRINT renderer needs an ID to work.')
         
                 // Render the table and save it to the file.
-                this.printTable(config, { columns, data }, cellParser)
+                this.printTable(config, { columns, data }, renderCtx)
 
                 // Hide the original code block.
                 el.empty()
@@ -50,11 +49,17 @@ export class MDPrintRenderer implements RendererConfig {
         }
     }
 
-    private printTable(config, { columns, data }: any, cellParser: ModernCellParser) {
+    private printTable(config, { columns, data }: any, { cellParser, sourcePath } : RendererContext) {
         // Get the editor instance
         const editor = this.app.workspace.activeEditor?.editor
         if (!editor)
             throw new Error('No active editor found.')
+
+        // Check if the file that made that initiated this call is also the files that is currently open and would therfore be updated.
+        const path = this.app.workspace.activeEditor?.file?.path
+        if (!path || path !== sourcePath) {
+            return
+        }
 
         // Construct the md table.
         const tab = getMarkdownTable({
@@ -111,6 +116,10 @@ export class MDPrintRenderer implements RendererConfig {
 
     private checkTableUpdate(editor: Editor, startLine: number, endLine: number, newTab: string): boolean { 
         const oldTab = editor.getRange({ line: startLine + 1, ch: 0 }, { line: endLine, ch: 0 })
+
+        // console.log(`< OLD:\n${oldTab.trim()}`)
+        // console.log(`> NEW:\n${newTab.trim()}`)
+        // console.log(`= ???: ${oldTab.trim() == newTab.trim()}`)
 
         return oldTab.trim() == newTab.trim()
     }
