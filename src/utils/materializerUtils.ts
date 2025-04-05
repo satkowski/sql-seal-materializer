@@ -17,28 +17,20 @@ export const renderAsString = (data: Record<string, any>[], columns: string[], c
 }
 
 export const formatCell = (value: string): string => {
-    // Escape the pipe character
-    if (value.startsWith('[[')) {
-        return value.replace(/\|/g, '\\|')
-    } 
-
     // Change the checkboxes
     if (value === '[ ]' || value === ('[x]')) {
         const checked = value === ('[x]')
         
         if (SQLSealMaterializer.settings.checkboxType === 'html') {
-            return `<input type='checkbox' ${checked ? 'checked' : ''}>`
+            value = `<input type='checkbox' ${checked ? 'checked' : ''}>`
         } else if (SQLSealMaterializer.settings.checkboxType === 'unicode') {
-            return `${checked ? '☑' : '☐'}`
-        } else { // markdown
-            return value
+            value = `${checked ? '☑' : '☐'}`
         }
-    }
-
     // Change the images
-    if (value.startsWith('![[')) {
-        return value.replace(/]]/g, `\\|${SQLSealMaterializer.settings.imgSize}]]`)
+    } else if (value.startsWith('![[')) {
+        value = value.replace(/]]/g, `|${SQLSealMaterializer.settings.imgSize}]]`)
     }
 
-    return value
+    // Escape the pipe character
+    return value.replace(/\|/g, '\\|')
 }
