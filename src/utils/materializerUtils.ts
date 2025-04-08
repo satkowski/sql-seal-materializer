@@ -1,3 +1,4 @@
+import { ModernCellParser } from "@hypersphere/sqlseal/dist/src/cellParser/ModernCellParser"
 import SQLSealMaterializer from "src/main"
 
 
@@ -5,7 +6,7 @@ export const mapDataFromHeaders = (columns: string[], data: Record<string, any>[
     return data.map(d => columns.map(c => String(d[c])))
 }
 
-export const renderAsString = (data: Record<string, any>[], columns: string[], cellParser) => {
+export const renderAsString = (data: Record<string, any>[], columns: string[], cellParser: ModernCellParser) => {
     return data.map(d => {
         const res: Record<string, string> = {}
         for (const col of columns) {

@@ -25,7 +25,7 @@ export default class SQLSealMaterializer extends Plugin {
         const registar = api.registerForPlugin(this)
         
         registar.registerView('md-print', new MDPrintRenderer(this.app))
-        // registar.registerView('md-replace', new MDReplaceRenderer(this.app))
+        registar.registerView('md-replace', new MDReplaceRenderer(this.app))
     }
 
 	async loadSettings() {

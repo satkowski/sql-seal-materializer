@@ -1,8 +1,38 @@
-/*
+.sqlseal-replace-parent {
+    position: relative;
+    /* height: 100vh; */
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.sqlseal-replace-preview, .sqlseal-replace-blocker, .sqlseal-replace-front {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
 
-If your plugin does not need CSS, delete this file.
+.sqlseal-replace-preview {
+    z-index: 1;
+}
 
-*/
+.sqlseal-replace-blocker {
+    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.sqlseal-replace-front {
+    z-index: 3;
+    top: 50%;
+    left: 50%;
+    height: auto;
+    width: auto;
+    transform: translate(-50%, -50%);
+}
+
+.sqlseal-replace-disclaimer {
+    padding-bottom: 20px;
+}
+
+.sqlseal-replace-button {
+    width: 100%;
+}

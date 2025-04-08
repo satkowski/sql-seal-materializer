@@ -1,4 +1,3 @@
-import { ModernCellParser } from "@hypersphere/sqlseal/dist/src/cellParser/ModernCellParser";
 import { ViewDefinition } from "@hypersphere/sqlseal/dist/src/grammar/parser";
 import { RendererConfig, RendererContext } from "@hypersphere/sqlseal/dist/src/renderer/rendererRegistry";
 import { console } from "inspector";
@@ -29,7 +28,7 @@ export class MDPrintRenderer implements RendererConfig {
         return config
     }
 
-    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement, renderCtx : RendererContext) {
+    render(config: ReturnType<typeof this.validateConfig>, el: HTMLElement, context : RendererContext) {
         return {
             render: ({ columns, data }: any) => {
                 // Check if a id was provided
@@ -37,7 +36,7 @@ export class MDPrintRenderer implements RendererConfig {
                     throw new Error('The MD-PRINT renderer needs an ID to work.')
         
                 // Render the table and save it to the file.
-                this.printTable(config, { columns, data }, renderCtx)
+                this.printTable(config, { columns, data }, context)
 
                 // Hide the original code block.
                 el.empty()
@@ -69,9 +68,10 @@ export class MDPrintRenderer implements RendererConfig {
             }
         })
 
-        const regex = new RegExp(`\`\`\`sqlseal\\n[\\s\\S]*?${this.rendererKey} ${config}[\\s\\S]*?\`\`\``, 'gi');
+        const regex = new RegExp(`\`\`\`sqlseal\\n*${this.rendererKey}\\s${config}[\\s\\S]*?\`\`\``, 'gi');
         let match;
         while ((match = regex.exec(editor.getValue())) !== null) {
+            console.log(match[0])
             // Get the line number of the codeblocks end
             const curLineNumber = editor.getValue().substring(0, match.index + match[0].length).split('\n').length - 1;
 
